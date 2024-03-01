@@ -1,4 +1,4 @@
-# Portfolio - recent non-proprietary projects.
+# Recent non-proprietary projects.
 __NOTE: BEING NON-PROPRIETARY, THIS CODE DOESN'T REFLECT THE COMPLEX AND MULTI-FACETED NATURE OF PROJECTS THAT I NORMALLY COMPLETE AT WORK.__
 
 
