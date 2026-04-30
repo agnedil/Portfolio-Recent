@@ -1,0 +1,12 @@
+# Core stack
+torch
+transformers
+datasets
+accelerate
+
+# Mixed precision / quantization
+bitsandbytes
+
+# Optional integrations
+wandb
+huggingface_hub

@@ -1,0 +1,30 @@
+# Core deep-learning stack
+torch>=2.8.0
+triton>=3.4.0
+torchvision
+torchcodec
+
+# Unsloth fine-tuning + RL stack (Gemma 4 requires recent versions)
+unsloth
+unsloth_zoo>=2026.4.6
+transformers==5.5.0
+trl>=0.28.0
+peft
+accelerate
+
+# Quantization
+bitsandbytes
+
+# Vision / audio dependencies
+timm
+pillow
+
+# Numerics + datasets
+numpy
+datasets>=4.3.0
+
+# HuggingFace hub utilities
+huggingface_hub>=0.34.0
+hf_transfer
+sentencepiece
+protobuf

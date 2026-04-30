@@ -1,0 +1,16 @@
+# Core training + inference stack
+torch
+transformers
+datasets
+accelerate
+
+# Mixed precision / sharding helpers
+bitsandbytes
+
+# Optional: high-throughput inference engine
+# (only needed for the vLLM example in multi-gpu-inference.py)
+vllm
+
+# Optional: large-model training/inference optimization
+# (only needed for the DeepSpeed launch path)
+deepspeed

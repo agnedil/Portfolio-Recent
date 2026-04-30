@@ -1,0 +1,18 @@
+# Core stack
+torch
+transformers
+datasets
+accelerate
+
+# Preference-optimization trainers (DPO, ORPO, KTO)
+trl>=0.11.0
+
+# PEFT / LoRA
+peft
+
+# Mixed precision / quantization
+bitsandbytes
+
+# Optional integrations
+wandb
+huggingface_hub

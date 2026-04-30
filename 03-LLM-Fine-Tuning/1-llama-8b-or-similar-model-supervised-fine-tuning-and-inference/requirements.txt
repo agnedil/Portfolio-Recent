@@ -1,0 +1,18 @@
+# Core training stack
+torch
+torchvision
+transformers
+datasets
+accelerate
+
+# Optional integrations from the article
+wandb
+huggingface_hub
+
+# Optional data utilities
+scikit-learn
+nlpaug
+
+# Inference server
+fastapi
+uvicorn
