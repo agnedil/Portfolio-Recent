@@ -45,7 +45,7 @@ python -c "import torch; print(torch.cuda.is_available()); print(torch.cuda.get_
 
 ---
 
-## 2. Training (`train.py`)
+## 2a. Training (`train.py`)
 
 Reproduce the article's defaults (3 epochs, batch 4 × grad-accum 8, lr 5e-5,
 fp16 on, save every 1000 steps, log every 500):
@@ -81,6 +81,42 @@ python train.py \
 Run `python train.py --help` for the full flag list.
 
 ---
+
+## 2b. Training from scratch (`train_from_scratch.py`)
+* Run the same way as `train.py`
+* Same CLI shape (drop-in interchangeable), but the entire training
+  infrastructure is built manually.
+* HF dependencies kept (model, tokenizer, dataset loading — not the algorithm):
+  - LlamaForCausalLM.from_pretrained, AutoTokenizer.from_pretrained, load_dataset
+
+* Replaced from scratch:
+  1. linear_schedule_lr — manual LR schedule. Linear warmup to 1.0, then linear decay to 0.0. Applied each optimizer step by
+  writing into optimizer.param_groups[i]["lr"].
+  2. causal_lm_loss / weighted_causal_lm_loss — explicit shifted cross-entropy (logits[..., :-1, :] against labels[..., 1:]),
+   matching what HF's LlamaForCausalLM does internally. The weighted variant takes the article's class_weights tensor.
+  3. make_dataloader — torch.utils.data.DataLoader over the HF Dataset with a custom collate that stacks input_ids /
+  attention_mask / labels into long tensors.
+  4. train_loop — manual training loop with everything Trainer does for you:
+     - Mixed precision via torch.cuda.amp.autocast (fp16) + GradScaler
+     - Gradient accumulation — divide loss by accum_steps, only step every Nth micro-batch (uses a micro_step vs global_step
+  counter)
+     - Gradient clipping — scaler.unscale_(optimizer) first, then clip_grad_norm_
+     - LR schedule — applied via the lambda before scaler.step()
+     - Periodic logging (logging_steps), eval (eval_steps, evaluation_strategy={steps,epoch,no}), and checkpointing
+  (save_steps)
+  5. evaluate — manual eval pass; reports mean loss + perplexity, restores model.train() afterward.
+  6. save_checkpoint + prune_old_checkpoints — writes output_dir/checkpoint-{step}/; the prune step matches HF Trainer's
+  save_total_limit by deleting the oldest directories until at most N remain.
+
+* Optimizer — torch.optim.AdamW constructed only over parameters that still require gradients (so --freeze-base doesn't allocate Adam states for frozen weights — small but real memory win).
+
+* Same CLI as train.py plus a few from-scratch-only knobs that Trainer would set itself: --warmup-steps, --weight-decay,
+  --max-grad-norm, --eval-steps, --num-workers. Everything else (--per-device-train-batch-size,
+  --gradient-accumulation-steps, --num-train-epochs, --learning-rate, --save-steps, --logging-steps, --save-total-limit,
+  --evaluation-strategy, --fp16, --class-weights, --freeze-base, --clean-text, --augment, --oversample-*, --wandb-project)
+  preserved verbatim.
+
+* Wandb integration kept as optional — when --wandb-project is set, training loss + LR + eval metrics get logged.
 
 ## 3. Inference (`inference.py`)
 

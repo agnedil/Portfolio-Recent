@@ -142,3 +142,38 @@ cpt_finetuned/
 
 Reload anywhere with `AutoModelForCausalLM.from_pretrained(...)`. The output
 is a base LM — feed it into your SFT pipeline next if you want a chatbot.
+
+## 6. Training code from scratch
+See `train_from_scratch.py` which has the same CLI, drop-in interchangeable, but the entire training infrastructure is hand-rolled — no Trainer, no TrainingArguments, no DataCollatorForLanguageModeling.
+
+  HF dependencies kept (model, tokenizer, dataset loading — not the algorithm): AutoModelForCausalLM, AutoTokenizer, load_dataset
+                                                     
+  Replaced from scratch:                                                                                                     
+                                              
+  1. build_blocked_dataset — kept the same packing trick: tokenize each row, then group_texts concatenates all token ids and 
+  slices into --block-size chunks. The trailing remainder is dropped, labels = input_ids. This matches how base models were
+  originally pre-trained and avoids padding waste.                                                                           
+  2. make_dataloader — replaces DataCollatorForLanguageModeling(mlm=False) with a tiny collate that stacks input_ids + labels
+   into long tensors and returns a DataLoader.                                                                               
+  3. causal_lm_loss — explicit shifted CE (logits[..., :-1, :] against labels[..., 1:]) matching HF's internal causal-LM     
+  loss.                                                     
+  4. schedule_lr — manual warmup + cosine (default, matching the original --lr-scheduler-type cosine) or linear decay.       
+  warmup_ratio is converted to warmup_steps = int(total_steps * warmup_ratio) up front.
+  5. train_loop — the loop replaces Trainer.train():                                                                         
+     - bf16 via torch.cuda.amp.autocast(dtype=torch.bfloat16) (no GradScaler needed — bf16 doesn't underflow)
+     - Gradient accumulation with micro_step vs global_step counters; loss divided by accum so the effective grad is the      
+  average across micro-batches                              
+     - Gradient clipping via clip_grad_norm_ over trainable params                                                            
+     - LR schedule written into optimizer.param_groups[i]["lr"] each step                                                     
+     - Periodic logging (--logging-steps), eval (--eval-steps with evaluation_strategy ∈ {steps, epoch, no}), and             
+  checkpointing (--save-steps)                                                                                               
+  6. evaluate — manual eval pass; reports mean loss + perplexity (exp(loss) clamped above 30 to avoid overflow). Restores    
+  model.train() afterward.                                                                                                   
+  7. save_checkpoint + prune_old_checkpoints — writes output_dir/checkpoint-{step}/; the prune step matches save_total_limit 
+  by deleting the oldest directories until at most N remain.                                                                 
+                                                                                                                             
+  8. Optimizer — torch.optim.AdamW over only parameters that still require gradients, with weight_decay from CLI.
+                                                                                                                             
+  9. Same CLI as `train.py` (model / dataset / blocking / training / save knobs all preserved) plus a few from-scratch-only knobs
+  that Trainer would have set itself: --max-grad-norm, --num-workers. Default --lr-scheduler-type stays at cosine and default
+   --bf16 stays on, matching CPT's recipe of "low LR, gentle schedule, bf16."

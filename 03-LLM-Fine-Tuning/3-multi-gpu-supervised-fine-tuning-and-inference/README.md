@@ -191,6 +191,63 @@ between GPUs over NVLink (or PCIe as fallback).
    rank 0 only (safe under `torchrun`). Output lands in `--output-dir`
    (default `./output`).
 
+**`multi-gpu-fine-tuning-from-scratch.py`**
+1. Same CLI, same torchrun --nproc_per_node=N launch as in multi-gpu-fine-tuning.py, but every distributed-training piece built manually instead of through HF Trainer:         
+                                                     
+  2. **Distributed setup** (no accelerate, no Trainer magic):
+   - setup_distributed reads RANK/LOCAL_RANK/WORLD_SIZE from torchrun's env, calls torch.cuda.set_device(local_rank) and
+  dist.init_process_group(backend="nccl"). Falls back gracefully to single-process if WORLD_SIZE isn't set.            
+  - cleanup_distributed in a try/finally so the NCCL group is destroyed even on exceptions.                                  
+  - configure_logging silences non-zero ranks so the console stays readable.                                                 
+                                                                                                                             
+  3. **DDP / FSDP wrapping**:                                                                                                       
+ - DDP path: DistributedDataParallel(model.cuda(local_rank), device_ids=[local_rank], find_unused_parameters=...).          
+ - FSDP path: find_layer_class walks model.modules() to resolve the --fsdp-transformer-layer string into an actual class,   
+  then builds an auto_wrap_policy via transformer_auto_wrap_policy. Sharding is FULL_SHARD; mixed-precision is configured    
+  through FSDP's MixedPrecision policy (param_dtype / reduce_dtype / buffer_dtype). Optional --fsdp-cpu-offload flag for     
+  tight VRAM.                                                                                                                
+                                                            
+  4. **Data sharding**:                                                                                                             
+  - make_distributed_dataloader returns a DistributedSampler when world > 1; the training loop calls sampler.set_epoch(epoch)
+   each epoch (required for proper cross-epoch shuffling).                                                                   
+                                                            
+  5. **Loss + LR**:
+  - causal_lm_loss — explicit shifted CE.                                                                                    
+  - linear_schedule_lr — manual warmup → linear decay.
+                                                                                                                             
+  6. **Mixed precision**:                                          
+  - DDP + fp16: torch.cuda.amp.autocast(dtype=fp16) + GradScaler (with scaler.unscale_(optimizer) before clipping).          
+  - DDP + bf16: autocast only (no scaler — bf16 doesn't underflow).                                                
+  - FSDP: autocast is disabled because FSDP's MixedPrecision policy already handles dtypes for the wrapped layers.           
+  - _autocast_kwargs centralizes that branching so the loop stays readable.                                                  
+                                                                                                                             
+  7. **Cross-rank reductions**:                                                                                                     
+  - reduce_mean does an all_reduce(SUM) then divides by world size — used to log a true world-mean loss instead of just      
+  rank-0's view.                                                                                                             
+  - Eval also uses all_reduce over a (sum_loss, count) tensor before computing the mean.                                     
+                                                                                                                             
+  8. **Gradient clipping**:                                                                                                         
+  - DDP: standard torch.nn.utils.clip_grad_norm_ over trainable params.                                                      
+  - FSDP: model.clip_grad_norm_(args.max_grad_norm) — FSDP exposes its own helper because parameters are sharded across      
+  ranks.                                                                                                                     
+                                              
+  9. **Saving (the trickiest part)**:                                                                                               
+  - DDP / single-process: rank-0 unwraps model.module and calls save_pretrained.
+  - FSDP: FSDP.state_dict_type(..., FULL_STATE_DICT, FullStateDictConfig(rank0_only=True, offload_to_cpu=True)) to gather a  
+  full CPU state dict on rank 0; then reconstruct an HF model from AutoConfig and load_state_dict, and call save_pretrained
+  so the output is a clean HF checkpoint reloadable with AutoModelForCausalLM.from_pretrained(...).                          
+  - dist.barrier() after each save so other ranks don't race ahead.                                                          
+  - prune_old_checkpoints matches HF Trainer's save_total_limit.                                                             
+                                                                                                                             
+  10. **Training loop**:                                            
+  - Standard grad-accumulation with micro_step vs global_step counters; loss divided by accum so the effective grad is the   
+  average across micro-batches.                                                                                              
+  - LR written into optimizer.param_groups[i]["lr"] each step.                                                               
+  - Periodic eval at --eval-steps (or end-of-epoch with --evaluation-strategy epoch); periodic checkpoints at --save-steps.  
+                                                                                                                             
+  11. **CLI**
+  - mirrors multi-gpu-fine-tuning.py plus a few from-scratch-only knobs (--max-grad-norm, --num-workers, --fsdp-cpu-offload) that Trainer would have set itself.
+
 **`multi-gpu-inference.py`**
 1. **Argument parsing** — model, prompt, sampling params (`temperature`,
    `top_p`, `top_k`, `do_sample`), dtype, and `device_map` strategy.
