@@ -1,0 +1,18 @@
+# Local data and indexes
+docs/
+markdown/
+parent_store/
+qdrant_db/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
