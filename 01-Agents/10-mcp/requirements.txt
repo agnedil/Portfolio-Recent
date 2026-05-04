@@ -1,0 +1,20 @@
+# Model Context Protocol — focused install
+#
+# Two roles are demonstrated here: standing up a FastMCP server, and consuming
+# an MCP server from an agent. Different scripts pull different pieces.
+
+# ---- FastMCP server + client ---------------------------------------------
+# model_context_protocol_fastmcp_server.py builds a FastMCP server.
+# model_context_protocol_consuming_fastmcp.py consumes one.
+fastmcp>=0.4.0
+
+# ---- MCP spec library + ADK MCP toolset ----------------------------------
+# model_context_protocol_mcp_filesystem.py uses Google ADK's MCPToolset to
+# talk to a stdio-based filesystem MCP server.
+mcp>=1.0.0
+google-adk>=0.2.0
+google-genai>=0.6.0
+
+# ---- Shared --------------------------------------------------------------
+python-dotenv>=1.0.0
+pydantic>=2.6.0

@@ -1,0 +1,69 @@
+# =============================================================================
+# 01-Agents — combined requirements
+# =============================================================================
+# This file is the union of every dependency referenced by any script in this
+# directory. For lighter installs, see the per-subfolder requirements files
+# (08-multi-agent-collaboration/, 10-mcp/, 11-a2a-protocol/) which pin only the
+# stack each pattern needs.
+#
+# Python 3.10+ recommended.
+# =============================================================================
+
+# ---- Common utilities -------------------------------------------------------
+python-dotenv>=1.0.0
+python-decouple>=3.8
+pydantic>=2.6.0
+requests>=2.31.0
+nest-asyncio>=1.6.0
+
+# ---- LangChain ecosystem ----------------------------------------------------
+# Used by 02-react, 03-routing, 06-self-reflection, 07-parallelization,
+# 08-multi-agent-collaboration (langchain variant), 09-memory-management,
+# 12-intro, and several files in 01-tool-use.
+langchain>=0.3.0
+langchain-core>=0.3.0
+langchain-community>=0.3.0
+langchain-openai>=0.2.0
+langchain-google-genai>=2.0.0
+langchainhub>=0.1.20
+
+# ---- LangGraph --------------------------------------------------------------
+# Used by 06-self-reflection (langgraph variant) and 09-memory-management.
+langgraph>=0.2.0
+
+# ---- OpenAI SDK -------------------------------------------------------------
+# Direct OpenAI SDK (separate from langchain-openai) is used by the Deep
+# Research example and the OpenAI Agents Framework integration.
+openai>=1.40.0
+
+# ---- OpenAI Agents Framework ------------------------------------------------
+# Used by 06-self-reflection/self_reflection_openai_agents_framework.py.
+openai-agents>=0.0.6
+
+# ---- Google ADK / Gemini ----------------------------------------------------
+# Used by every *_google_adk.py file and the multi_agent_collaboration_gemini_*
+# files. google-genai is the underlying Gemini SDK that ADK builds on.
+google-adk>=0.2.0
+google-genai>=0.6.0
+
+# ---- CrewAI -----------------------------------------------------------------
+# Used by 01-tool-use/tool_use_crew_ai_stocks.py, 04-planning/planning_crew_ai.py,
+# 08-multi-agent-collaboration/multi_agent_collaboration_crewai_gemini.py.
+crewai>=0.80.0
+crewai-tools>=0.25.0
+
+# ---- Search tools -----------------------------------------------------------
+# google-search-results provides SerpAPI; required by the LangChain ReAct demo
+# and a few tool-use examples.
+google-search-results>=2.4.2
+duckduckgo-search>=6.2.0
+
+# ---- Model Context Protocol (MCP) ------------------------------------------
+# Used by 10-mcp/. fastmcp is the high-level FastMCP server/client framework;
+# mcp is the underlying spec library that ADK's MCPToolset talks to.
+fastmcp>=0.4.0
+mcp>=1.0.0
+
+# ---- Agent-to-Agent (A2A) protocol -----------------------------------------
+# Used by 11-a2a-protocol/.
+a2a-sdk>=0.2.0

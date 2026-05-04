@@ -1,0 +1,25 @@
+# Multi-agent collaboration — focused install
+#
+# This subfolder mixes three orchestration stacks; pick the one(s) you actually
+# need rather than installing everything at once.
+
+# ---- Shared --------------------------------------------------------------
+python-dotenv>=1.0.0
+pydantic>=2.6.0
+
+# ---- LangChain (multi_agent_collaboration_langchain.py) ------------------
+langchain>=0.3.0
+langchain-core>=0.3.0
+langchain-openai>=0.2.0
+
+# ---- Google ADK + Gemini --------------------------------------------------
+# multi_agent_collaboration_google_adk.py and the four
+# multi_agent_collaboration_gemini_*.py variants (sequential, parallel,
+# loop, coordinator).
+google-adk>=0.2.0
+google-genai>=0.6.0
+
+# ---- CrewAI ---------------------------------------------------------------
+# multi_agent_collaboration_crewai_gemini.py
+crewai>=0.80.0
+crewai-tools>=0.25.0

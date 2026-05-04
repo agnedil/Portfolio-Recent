@@ -1,0 +1,12 @@
+# Agent-to-Agent (A2A) protocol — focused install
+#
+# The two scripts here demonstrate the A2A specification: an agent card
+# (capabilities advertisement) and an A2A request/response exchange.
+
+# ---- A2A SDK -------------------------------------------------------------
+a2a-sdk>=0.2.0
+
+# ---- Shared --------------------------------------------------------------
+python-dotenv>=1.0.0
+pydantic>=2.6.0
+requests>=2.31.0
