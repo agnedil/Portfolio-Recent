@@ -5,7 +5,6 @@
 
 # ROC curve optimal threshold formula taken from here: https://stackoverflow.com/questions/28719067/roc-curve-and-cut-off-point-python
 
-
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.calibration import calibration_curve

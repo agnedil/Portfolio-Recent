@@ -1,0 +1,21 @@
+# Notebooks were authored against the pre-1.0 OpenAI Python SDK (April–May 2023).
+# Pinning openai<1 is required — the v1.x release replaced openai.ChatCompletion,
+# openai.error, and openai.embeddings_utils with new APIs.
+
+openai>=0.27.0,<1.0
+backoff>=2.0
+tiktoken>=0.4
+
+pandas>=1.5
+numpy>=1.23
+scikit-learn>=1.2
+xgboost>=1.7
+
+tqdm>=4.65
+matplotlib>=3.6
+
+# Used in 02_attempted_machine_translation.ipynb (Urdu → English MT exploration)
+googletrans==3.1.0a0
+
+jupyter>=1.0
+notebook>=6.5
