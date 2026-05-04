@@ -1,0 +1,12 @@
+- query: "How does retry logic work in the order service?"
+  relevant_sources:
+    - "gs://docs/order-service.md"
+    - "gs://docs/retries.md"
+
+- query: "What's the latency SLO for checkout?"
+  relevant_sources:
+    - "gs://docs/slos.md"
+
+- query: "Which team owns the payments webhook?"
+  relevant_sources:
+    - "gs://docs/ownership.md"
